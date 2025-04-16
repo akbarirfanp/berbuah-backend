@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  api-auth-gateway:
+    build:
+      context: ./api-auth-gateway-service
+    ports:
+      - "9301:80"
+    volumes:
+      - ./api-auth-gateway-service:/var/www/html
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - microservice-network
+
+  usermanagement-service:
+    build:
+      context: ./usermanagement-service
+    ports:
+      - "9302:80"
+    volumes:
+      - ./usermanagement-service:/var/www/html
+    depends_on:
+      - redis
+      - rabbitmq
+      - usermanagement-db
+    networks:
+      - microservice-network
+
+  product-service:
+    build:
+      context: ./product-service
+    ports:
+      - "9303:80"
+    volumes:
+      - ./product-service:/var/www/html
+    depends_on:
+      - redis
+      - rabbitmq
+      - product-db
+    networks:
+      - microservice-network
+
+  usermanagement-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: usermanagement_db
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - usermanagement-db-data:/var/lib/mysql
+    networks:
+      - microservice-network
+
+  product-db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: product_db
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - product-db-data:/var/lib/mysql
+    networks:
+      - microservice-network
+
+  redis:
+    image: redis:6
+    ports:
+      - "6379:6379"
+    networks:
+      - microservice-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - microservice-network
+
+networks:
+  microservice-network:
+    driver: bridge
+
+volumes:
+  usermanagement-db-data:
+  product-db-data:
